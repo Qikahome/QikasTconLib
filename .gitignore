@@ -1,0 +1,30 @@
+# eclipse
+bin
+*.launch
+.settings
+.metadata
+.classpath
+.project
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run/*
+!run/thingpacks/
+run/thingpacks/disabled/
+ext_files
+removed
+# Files from Forge MDK
+forge*changelog.txt
+# Ignore only root-level java files (e.g. reference copies)
+/*.java
