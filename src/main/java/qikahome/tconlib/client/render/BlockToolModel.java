@@ -75,9 +75,7 @@ import slimeknights.tconstruct.library.tools.nbt.MaterialIdNBT;
 import slimeknights.tconstruct.library.tools.nbt.ModifierNBT;
 import slimeknights.tconstruct.library.tools.nbt.ToolStack;
 
-import static qikahome.tconlib.TconLib.LOGGER;
-
-@SuppressWarnings({"null","removal"})
+@SuppressWarnings({ "null", "removal" })
 public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
 
     @Nonnull
@@ -93,7 +91,8 @@ public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
         }
     }
 
-    private static record BakedModelWithTransformers<M extends BakedModel>(M model, List<IQuadTransformer> transformers) {
+    private static record BakedModelWithTransformers<M extends BakedModel>(M model,
+            List<IQuadTransformer> transformers) {
     }
 
     private static final String PATH_PREFIX = "models/";
@@ -128,11 +127,11 @@ public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
                 }
                 var transformers = new ArrayList<IQuadTransformer>();
                 if (obj.has("transform")) {
-                    for (var tran : Utils.parseTransforms(obj.get("transform")))
-                        transformers.add(QuadTransformers.applying(tran));
+                    var tran = Utils.TransformationLoadable.INSTANCE.convert(obj.get("transform"), "transform");
+                    transformers.add(QuadTransformers.applying(tran));
                 }
                 if (obj.has("color")) {
-                    var color = Utils.parseColor(obj.get("color"));
+                    var color = Utils.ExtendColorLoadable.ALPHA.convert(obj.get("color"), "color");
                     transformers.add(QuadTransformers.applyingColor(color));
                 }
                 if (obj.has("light"))
@@ -233,7 +232,7 @@ public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
                 IToolStackView tool = ToolStack.from(stack);
 
                 // 如果没有特殊数据，渲染原始模型
-                ModifierNBT modifiers = tool.getUpgrades();
+                ModifierNBT modifiers = tool.getModifiers();
                 if (materials.getMaterials().isEmpty() && modifiers.isEmpty()) {
                     return originalModel;
                 }
@@ -261,8 +260,10 @@ public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
                         }
                         cacheBuilder.add(caches);
                         thisModifiers.add(baked.getCachedModifierModels(caches,
-                                () -> bakedModifierModels.stream().map(baked -> new BakedModelWithTransformers<BakedModel>(
-                                        baked.model().resolve(tool, entry), baked.transformers())).toList()));
+                                () -> bakedModifierModels.stream()
+                                        .map(baked -> new BakedModelWithTransformers<BakedModel>(
+                                                baked.model().resolve(tool, entry), baked.transformers()))
+                                        .toList()));
                     }
                 }
 
@@ -315,7 +316,8 @@ public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
         private final Cache<ToolCacheKey, BakedModel> thisCache = CacheBuilder.newBuilder()
                 .maximumSize(MaterialRenderInfoLoader.INSTANCE.getAllRenderInfos().size() * 3L / 2)
                 .build();
-        private final Cache<Set<Object>, List<BakedModelWithTransformers<BakedModel>>> modifierCache = CacheBuilder.newBuilder()
+        private final Cache<Set<Object>, List<BakedModelWithTransformers<BakedModel>>> modifierCache = CacheBuilder
+                .newBuilder().maximumSize(MaterialRenderInfoLoader.INSTANCE.getAllRenderInfos().size() * 3L / 2)
                 .build();
 
         public ItemOverrides getOverrides() {

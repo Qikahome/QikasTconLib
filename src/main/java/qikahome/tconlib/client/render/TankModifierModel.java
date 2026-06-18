@@ -35,7 +35,6 @@ import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -55,7 +54,9 @@ import java.util.function.Function;
  * }
  * </pre>
  */
+@SuppressWarnings({ "null", "removal" })
 public class TankModifierModel implements IUnbakedGeometry<TankModifierModel> {
+    @Nonnull
     public static final IGeometryLoader<TankModifierModel> LOADER = TankModifierModel::deserialize;
 
     private final SimpleBlockModel model;
