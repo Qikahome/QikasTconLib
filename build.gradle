@@ -247,7 +247,8 @@ tasks.named('processResources', ProcessResources).configure {
             mod_authors: mod_authors, mod_description: mod_description,
             jei_range: jei_range,
             tconstruct_range: tconstruct_range,
-            mantle_range: mantle_range
+            mantle_range: mantle_range,
+            autosizedgui_range: autosizedgui_range
     ]
     inputs.properties replaceProperties // 将变量纳入任务输入（用于增量构建）
 

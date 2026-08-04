@@ -3,17 +3,19 @@ package qikahome.tconlib.mixin;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import qikahome.tconlib.Config;
+import qikahome.tconlib.MixinConstants;
 import qikahome.tconlib.TconLib;
 import qikahome.tconlib.client.screen.AutoSizedToolContainerScreen;
-import slimeknights.tconstruct.tools.TinkerTools;
 import slimeknights.tconstruct.tools.ToolClientEvents;
 
 /**
@@ -29,11 +31,13 @@ import slimeknights.tconstruct.tools.ToolClientEvents;
 @Mixin(MenuScreens.class)
 public abstract class MixinToolContainerScreen {
 
-
     @Inject(method = "register", at = @At("HEAD"), cancellable = true)
     private static <M extends AbstractContainerMenu, U extends Screen & MenuAccess<M>> void tconlib$register(
             MenuType<? extends M> type, MenuScreens.ScreenConstructor<M, U> constructor, CallbackInfo cb) {
-        if (TconLib.ClientModEvents.cancelToolContainerScreenRegister && type == TinkerTools.toolContainer.get()) {
+        // 用注册名比较而非直接访问 TinkerTools.toolContainer（后者会强制加载 TCon 类，可能触发类初始化崩溃）。
+        // 常量放主包的 MixinConstants（不能在 mixin 包内，也不能作为 mixin 静态字段，原因见该类注释）。
+        if (MixinConstants.cancelToolContainerScreenRegister
+                && MixinConstants.TOOL_CONTAINER_KEY.equals(ForgeRegistries.MENU_TYPES.getKey(type))) {
             cb.cancel();
         }
     }

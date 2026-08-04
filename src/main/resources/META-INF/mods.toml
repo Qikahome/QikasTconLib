@@ -45,3 +45,11 @@ description='''${mod_description}'''
     versionRange="${tconstruct_range}"
     ordering="AFTER"
     side="BOTH"
+
+# AutoSizedGUI 依赖 - 可选依赖（jarJar 内嵌）
+[[dependencies.${mod_id}]]
+    modId="autosizedgui"
+    mandatory=false
+    versionRange="${autosizedgui_range}"
+    ordering="NONE"
+    side="BOTH"

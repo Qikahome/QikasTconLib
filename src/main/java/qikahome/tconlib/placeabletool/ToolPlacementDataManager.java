@@ -132,9 +132,12 @@ public class ToolPlacementDataManager implements ISafeManagerReloadListener {
     public BlockState getStateForPlacement(BlockPlaceContext context, ItemStack tool) {
       Direction facing = horizontal ? context.getHorizontalDirection().getOpposite()
           : context.getClickedFace();
+      // 可被水冲掉的工具：放置时不保留位置的水（waterlogged 恒 false），但放置本身不失败
+      boolean waterlogged = !PlacedToolBlock.canWashAway(context.getLevel(), context.getClickedPos(),
+          TconLib.PLACED_TOOL.get().defaultBlockState().setValue(BlockStateProperties.FACING, facing), tool)
+          && context.getLevel().getFluidState(context.getClickedPos()).is(Fluids.WATER);
       BlockState state = TconLib.PLACED_TOOL.get().defaultBlockState().setValue(BlockStateProperties.FACING, facing)
-          .setValue(BlockStateProperties.WATERLOGGED,
-              context.getLevel().getFluidState(context.getClickedPos()).is(Fluids.WATER));
+          .setValue(BlockStateProperties.WATERLOGGED, waterlogged);
       // 需要支撑的工具：不满足支撑要求则拒绝放置
       if (!isSupported(context.getLevel(), context.getClickedPos(), state)) {
         return null;

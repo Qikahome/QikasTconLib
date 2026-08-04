@@ -6,9 +6,9 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
@@ -45,11 +45,13 @@ import qikahome.tconlib.placeabletool.PlacedToolBlock;
 import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
 import qikahome.tconlib.placeabletool.PlacedToolContainerMenu;
 import qikahome.tconlib.placeabletool.PlacedToolInventoryTickModule;
-import qikahome.tconlib.placeabletool.PlacingModule;
 import qikahome.tconlib.placeabletool.PlacedToolLightModule;
+import qikahome.tconlib.placeabletool.PlacingModule;
 import qikahome.tconlib.placeabletool.ProjectileToolPlacingModule;
 import qikahome.tconlib.placeabletool.ToolDispenserBehavior;
 import qikahome.tconlib.placeabletool.ToolPlacementDataManager;
+import qikahome.tconlib.placeabletool.WashableModule;
+import qikahome.tconlib.placeabletool.hook.PlacedToolFluidStateChangeModifierHook;
 import qikahome.tconlib.placeabletool.hook.PlacedToolInteractionModifierHook;
 import qikahome.tconlib.placeabletool.hook.PlacedToolLightModifierHook;
 import qikahome.tconlib.placeabletool.hook.PlacedToolTickModifierHook;
@@ -103,6 +105,7 @@ public class TconLib {
             ModifierModule.LOADER.register(getResource("placed_light_minimum"),
                     PlacedToolLightModule.MinimumLightModule.LOADER);
             ModifierModule.LOADER.register(getResource("projectile_placing"), ProjectileToolPlacingModule.LOADER);
+            ModifierModule.LOADER.register(getResource("washable"), WashableModule.LOADER);
         }
 
     }
@@ -128,6 +131,12 @@ public class TconLib {
             getResource("placed_tool_light"), PlacedToolLightModifierHook.class,
             PlacedToolLightModifierHook.AllMerger::new,
             (tool, modifier, state, level, pos, ptbe, light) -> light);
+
+    public static final ModuleHook<PlacedToolFluidStateChangeModifierHook> PLACED_TOOL_FLUID_STATE_CHANGE_HOOK = ModifierHooks
+            .register(getResource("placed_tool_fluid_state_change"), PlacedToolFluidStateChangeModifierHook.class,
+                    PlacedToolFluidStateChangeModifierHook.AllMerger::new,
+                    new PlacedToolFluidStateChangeModifierHook() {
+                    });
     // endregion
 
     public TconLib(FMLJavaModLoadingContext context) {
@@ -206,10 +215,10 @@ public class TconLib {
 
             event.enqueueWork(() -> {
                 // 新 AutoSizedGUI 屏幕与官方屏幕可配置切换（默认新屏幕）
-                cancelToolContainerScreenRegister = false;
+                MixinConstants.cancelToolContainerScreenRegister = false;
                 MenuScreens.register(TconLib.PLACED_TOOL_MENU.get(), provider);
                 MenuScreens.register(TinkerTools.toolContainer.get(), provider);
-                cancelToolContainerScreenRegister = true;
+                MixinConstants.cancelToolContainerScreenRegister = true;
                 ForgeRegistries.ITEMS.forEach(item -> {
                     if (item instanceof ModifiableArmorItem) {
                         ItemProperties.register(item, getResource("armor_model"),

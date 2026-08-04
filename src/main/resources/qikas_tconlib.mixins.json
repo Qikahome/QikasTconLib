@@ -4,6 +4,7 @@
   "package": "qikahome.tconlib.mixin",
   "refmap": "qikas_tconlib.refmap.json",
   "mixins": [
+    "MixinFlowingFluid",
     "MixinThresholdSwitchBlockEntity"
   ],
   "client": [

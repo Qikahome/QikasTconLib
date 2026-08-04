@@ -43,6 +43,7 @@ import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -50,6 +51,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
@@ -76,7 +78,7 @@ import slimeknights.tconstruct.library.tools.nbt.ToolStack;
 import slimeknights.tconstruct.smeltery.block.entity.component.TankBlockEntity.ITankBlock;
 import slimeknights.tconstruct.tools.network.ToolContainerFluidUpdatePacket;
 
-public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
+public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterloggedBlock, LiquidBlockContainer {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
@@ -184,6 +186,17 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
     @Override
     public void onRemove(BlockState oldState, Level level, BlockPos pos, BlockState newState,
             boolean isMoving) {
+        // 含水状态变化（同一方块类型的属性变化）也走 onRemove：通知 modifier
+        if (!level.isClientSide && oldState.getBlock() == newState.getBlock()
+                && oldState.getValue(WATERLOGGED) != newState.getValue(WATERLOGGED)
+                && level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+            ToolStack tool = ToolStack.from(ptbe.getStack());
+            boolean waterlogged = newState.getValue(WATERLOGGED);
+            for (ModifierEntry entry : tool.getModifierList()) {
+                entry.getHook(TconLib.PLACED_TOOL_FLUID_STATE_CHANGE_HOOK)
+                        .onWaterloggedChanged(tool, entry, newState, level, pos, waterlogged);
+            }
+        }
         if (!oldState.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof PlacedToolBlockEntity ptbe && !ptbe.getStack().isEmpty()) {
@@ -219,6 +232,28 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
     public FluidState getFluidState(BlockState state) {
         // 水浸状态正确但没渲染水，是因为没告诉渲染器这里的水：返回非空 FluidState 才会渲染水面/水流
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+    }
+
+    @Override
+    public boolean canPlaceLiquid(BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
+        // 可被水冲掉的工具：拒绝任何液体放入（桶倒水/含水）；自然流动由 MixinFlowingFluid 放行并破坏
+        if (level instanceof Level lv && level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe
+                && canWashAway(lv, pos, state, ptbe.getStack())) {
+            return false;
+        }
+        return SimpleWaterloggedBlock.super.canPlaceLiquid(level, pos, state, fluid);
+    }
+
+    /** 查询工具是否允许被水冲掉（PLACED_TOOL_FLUID_STATE_CHANGE_HOOK.canBeWashedAway 任一 modifier 返回 true） */
+    public static boolean canWashAway(Level level, BlockPos pos, BlockState state, ItemStack tool) {
+        ToolStack toolStack = ToolStack.from(tool);
+        for (ModifierEntry entry : toolStack.getModifierList()) {
+            if (entry.getHook(TconLib.PLACED_TOOL_FLUID_STATE_CHANGE_HOOK)
+                    .canBeWashedAway(toolStack, entry, state, level, pos, level.getFluidState(pos))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
