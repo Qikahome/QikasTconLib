@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "qikas_tconlib:block/placed_tool" }
+  }
+}

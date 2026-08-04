@@ -127,6 +127,16 @@ repositories {
     flatDir {
         dir 'libs'
     }
+
+    // AutoSizedGUI - GitHub Packages
+    maven {
+        name = "GitHubPackages"
+        url = "https://maven.pkg.github.com/Qikahome/AutoSizedGUI"
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
     
     // JEI 模组仓库
     maven {
@@ -190,10 +200,16 @@ dependencies {
 
     // Jade - 可选依赖（方块信息显示）
     // CurseForge: https://www.curseforge.com/minecraft/mc-mods/jade
+    compileOnly fg.deobf("curse.maven:jade-324717:6855440")
     runtimeOnly fg.deobf("curse.maven:jade-324717:6855440")
 
     // CyclopsCore - 运行时依赖（调试便利功能）
     runtimeOnly fg.deobf("curse.maven:cyclops-core-232758:7637992")
+
+    // AutoSizedGUI - 自动布局GUI（jarjar 嵌入）
+    implementation jarJar(fg.deobf("qikahome:AutoSizedGUI-1.20.1:1.0.8")) {
+        jarJar.ranged(it, "[1.0,2.0)")
+    }
 
     // 匠魂（Tinkers' Construct）和 Mantle 核心库 - 可选依赖
     // 仅编译时依赖其 API，运行时不打包进模组
@@ -277,6 +293,12 @@ publishing {
             url "file://${project.projectDir}/mcmodsrepo"
         }
     }
+}
+
+// Mixin 配置
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.mixins.json"
 }
 
 // 配置所有 Java 编译任务的编码为 UTF-8

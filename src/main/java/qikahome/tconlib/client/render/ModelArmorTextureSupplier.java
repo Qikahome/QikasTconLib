@@ -13,6 +13,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import qikahome.tconlib.util.TransformationLoadable;
 import slimeknights.mantle.data.loadable.Loadables;
 import slimeknights.mantle.data.loadable.primitive.IntLoadable;
 import slimeknights.mantle.data.loadable.primitive.StringLoadable;
@@ -31,7 +32,7 @@ public class ModelArmorTextureSupplier implements ArmorTextureSupplier, ArmorTex
 
     @Nonnull
     public static final RecordLoadable<ModelArmorTextureSupplier> LOADER = RecordLoadable.create(
-            Utils.TransformationLoadable.INSTANCE.nullableField("transform", s -> s.transform),
+            TransformationLoadable.INSTANCE.nullableField("transform", s -> s.transform),
             StringLoadable.DEFAULT.nullableField("attach", s -> s.attachName),
             IntLoadable.range(0, 15).defaultField("luminosity", 0, false, s -> s.luminosity),
             IntLoadable.range(0, Integer.MAX_VALUE).defaultField("armor_model_override", 0, false, s -> s.armorModelOverride),

@@ -37,6 +37,12 @@ public class Config
 //             .comment("在通用设置中记录的物品列表。")
 //             .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), Config::validateItemName);
 
+    // 放置工具容器使用 AutoSizedGUI 新屏幕（替代匠魂官方 ToolContainerScreen）。
+    // 新屏幕基于自动布局面板，功能与官方等价；出问题时关掉可回退官方屏幕
+    public static final ForgeConfigSpec.BooleanValue ENABLE_AUTO_SIZED_TOOL_SCREEN = BUILDER
+            .comment("Use AutoSizedGUI for tool container screen")
+            .define("enableAutoSizedToolScreen", true);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
 //     public static boolean logDirtBlock;

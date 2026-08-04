@@ -53,6 +53,7 @@ import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import qikahome.tconlib.TconLib;
 import qikahome.tconlib.client.BlockModifierManager;
+import qikahome.tconlib.util.TransformationLoadable;
 import slimeknights.mantle.Mantle;
 import slimeknights.mantle.client.model.util.ColoredBlockModel;
 import slimeknights.mantle.client.model.util.DynamicBakedWrapper;
@@ -127,7 +128,7 @@ public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
                 }
                 var transformers = new ArrayList<IQuadTransformer>();
                 if (obj.has("transform")) {
-                    var tran = Utils.TransformationLoadable.INSTANCE.convert(obj.get("transform"), "transform");
+                    var tran = TransformationLoadable.INSTANCE.convert(obj.get("transform"), "transform");
                     transformers.add(QuadTransformers.applying(tran));
                 }
                 if (obj.has("color")) {

@@ -13,7 +13,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
-import com.mojang.math.Transformation;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -23,14 +22,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.DyeColor;
 
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
-
 import qikahome.tconlib.TconLib;
 import slimeknights.mantle.data.loadable.Loadable;
 import slimeknights.mantle.data.loadable.common.ColorLoadable;
-import slimeknights.mantle.data.loadable.common.Vector3fLoadable;
 import slimeknights.mantle.util.typed.TypedMap;
 
 @SuppressWarnings({"removal","null"})
@@ -54,153 +48,6 @@ public class Utils {
         } catch (Exception e) {
             TconLib.LOGGER.error("Failed to load model: {}", fileLocation, e);
             return null;
-        }
-    }
-
-    /**
-     * A {@link Loadable} for {@link Transformation} with extended JSON format support.
-     * <p>
-     * Supported fields (all optional):
-     */
-    public static class TransformationLoadable implements Loadable<Transformation> {
-        public static final TransformationLoadable INSTANCE = new TransformationLoadable();
-
-        private TransformationLoadable() {}
-
-        @Override
-        public Transformation convert(JsonElement element, String key, TypedMap context) {
-            var obj = element.getAsJsonObject();
-            Vector3f translation = new Vector3f();
-            Quaternionf leftRotation = new Quaternionf();
-            Quaternionf rightRotation = new Quaternionf();
-            Vector3f scale = new Vector3f(1, 1, 1);
-            Vector3f origin = new Vector3f();
-
-            if (obj.has("translation"))
-                translation = Vector3fLoadable.INSTANCE.convert(obj.get("translation"), key + ".translation", context);
-            if (obj.has("left_rotation"))
-                leftRotation = RotationLoadable.INSTANCE.convert(obj.get("left_rotation"), key + ".left_rotation", context);
-            if (obj.has("rotation"))
-                rightRotation = RotationLoadable.INSTANCE.convert(obj.get("rotation"), key + ".rotation", context);
-            else if (obj.has("right_rotation"))
-                rightRotation = RotationLoadable.INSTANCE.convert(obj.get("right_rotation"), key + ".right_rotation", context);
-            if (obj.has("scale"))
-                scale = Vector3fLoadable.INSTANCE.convert(obj.get("scale"), key + ".scale", context);
-            if (obj.has("origin"))
-                origin = Vector3fLoadable.INSTANCE.convert(obj.get("origin"), key + ".origin", context);
-
-            var identity = new Quaternionf();
-            var identityScale = new Vector3f(1, 1, 1);
-
-            var main = new Transformation(translation, leftRotation, scale, rightRotation);
-
-            if (origin.x() != 0 || origin.y() != 0 || origin.z() != 0) {
-                var negOrigin = new Vector3f(-origin.x(), -origin.y(), -origin.z());
-                var posOrigin = new Transformation(origin, identity, identityScale, identity);
-                var negOriginT = new Transformation(negOrigin, identity, identityScale, identity);
-                return negOriginT.compose(main).compose(posOrigin);
-            }
-            return main;
-        }
-
-        @Override
-        public JsonElement serialize(Transformation object) {
-            var matrix = object.getMatrix();
-            var arr = new JsonArray();
-            float[] values = new float[16];
-            matrix.get(values);
-            for (float v : values) {
-                arr.add(v);
-            }
-            var obj = new JsonObject();
-            obj.add("matrix", arr);
-            return obj;
-        }
-
-        @Override
-        public Transformation decode(FriendlyByteBuf buffer, TypedMap context) {
-            float[] values = new float[16];
-            for (int i = 0; i < 16; i++) {
-                values[i] = buffer.readFloat();
-            }
-            return new Transformation(new Matrix4f().set(values));
-        }
-
-        @Override
-        public void encode(FriendlyByteBuf buffer, Transformation object) {
-            float[] values = new float[16];
-            object.getMatrix().get(values);
-            for (float v : values) {
-                buffer.writeFloat(v);
-            }
-        }
-    }
-
-    /**
-     * A {@link Loadable} for {@link Quaternionf} representing a rotation.
-     * <p>
-     * Supported formats:
-     * <ul>
-     *   <li>Single number — angle in degrees, rotation around Y axis</li>
-     *   <li>Array of 4 floats — {@code [x, y, z, w]}</li>
-     * </ul>
-     */
-    public static class RotationLoadable implements Loadable<Quaternionf> {
-        public static final RotationLoadable INSTANCE = new RotationLoadable();
-
-        private RotationLoadable() {}
-
-        @Override
-        public Quaternionf convert(JsonElement element, String key, TypedMap context) {
-            // Single number: angle in degrees, rotation around Y axis
-            if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
-                float halfAngle = (float) (Math.toRadians(element.getAsFloat()) * 0.5);
-                return new Quaternionf(0, (float) Math.sin(halfAngle), 0, (float) Math.cos(halfAngle));
-            }
-            // Object: {"axis": "x"|"y"|"z", "angle": degrees}
-            if (element.isJsonObject()) {
-                var obj = element.getAsJsonObject();
-                float halfAngle = (float) (Math.toRadians(GsonHelper.getAsDouble(obj, "angle")) * 0.5);
-                float sin = (float) Math.sin(halfAngle);
-                float cos = (float) Math.cos(halfAngle);
-                return switch (GsonHelper.getAsString(obj, "axis")) {
-                    case "x" -> new Quaternionf(sin, 0, 0, cos);
-                    case "y" -> new Quaternionf(0, sin, 0, cos);
-                    case "z" -> new Quaternionf(0, 0, sin, cos);
-                    default -> throw new JsonSyntaxException("Invalid rotation axis at " + key);
-                };
-            }
-            // Array of 4 floats: [x, y, z, w]
-            var arr = element.getAsJsonArray();
-            return new Quaternionf(
-                arr.get(0).getAsFloat(),
-                arr.get(1).getAsFloat(),
-                arr.get(2).getAsFloat(),
-                arr.get(3).getAsFloat()
-            );
-        }
-
-        @Override
-        public JsonElement serialize(Quaternionf object) {
-            var arr = new JsonArray();
-            arr.add(object.x());
-            arr.add(object.y());
-            arr.add(object.z());
-            arr.add(object.w());
-            return arr;
-        }
-
-        @Override
-        public Quaternionf decode(FriendlyByteBuf buffer, TypedMap context) {
-            return new Quaternionf(buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
-        }
-
-        @Override
-        public void encode(FriendlyByteBuf buffer, Quaternionf object) {
-            buffer.writeFloat(object.x());
-            buffer.writeFloat(object.y());
-            buffer.writeFloat(object.z());
-            buffer.writeFloat(object.w());
         }
     }
 

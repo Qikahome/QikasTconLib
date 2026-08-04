@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "compatibilityLevel": "JAVA_17",
+  "package": "qikahome.tconlib.mixin",
+  "refmap": "qikas_tconlib.refmap.json",
+  "mixins": [
+    "MixinThresholdSwitchBlockEntity"
+  ],
+  "client": [
+    "MixinToolContainerScreen"
+  ],
+  "server": [],
+  "minVersion": "0.8"
+}
