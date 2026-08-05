@@ -30,6 +30,7 @@ import qikahome.tconlib.util.VoxelShapeLoadable;
 import slimeknights.mantle.data.listener.ISafeManagerReloadListener;
 import slimeknights.mantle.data.loadable.primitive.BooleanLoadable;
 import slimeknights.mantle.data.loadable.primitive.EnumLoadable;
+import slimeknights.mantle.data.loadable.primitive.FloatLoadable;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.mantle.data.registry.GenericLoaderRegistry.IHaveLoader;
 
@@ -83,13 +84,14 @@ public class ToolPlacementDataManager implements ISafeManagerReloadListener {
    * @param interaction  交互形状（可为 null，缺省跟随视觉形状）
    * @param collision    碰撞形状（可为 null，缺省跟随视觉形状）
    * @param trans        渲染时叠加的额外变换（绕物品自身坐标）
+   * @param hardness     挖掘硬度（0 = 瞬间挖掉，如火把；默认 0.5）
    */
   public static record PlacementData(boolean horizontal, @Nullable SupportDirection support, SupportType supportType,
       Map<Direction, VoxelShape> shape, @Nullable Map<Direction, VoxelShape> interaction,
-      @Nullable Map<Direction, VoxelShape> collision, Transformation trans) implements IHaveLoader {
+      @Nullable Map<Direction, VoxelShape> collision, Transformation trans, float hardness) implements IHaveLoader {
     /** 未配置该工具时的回退数据：自由放置（无支撑要求）、视觉/交互为展示框样贴墙薄片（16×16×1），无碰撞、无额外变换 */
     public static final PlacementData DEFAULT = new PlacementData(false, null, SupportType.CENTER, defaultShapes(),
-        defaultShapes(), emptyShapes(), Transformation.identity());
+        defaultShapes(), emptyShapes(), Transformation.identity(), 0.5F);
 
     public static final RecordLoadable<PlacementData> LOADER = RecordLoadable.create(
         BooleanLoadable.DEFAULT.defaultField("horizontal", false, PlacementData::horizontal),
@@ -100,6 +102,7 @@ public class ToolPlacementDataManager implements ISafeManagerReloadListener {
         VoxelShapeLoadable.RotatedLoadable.INSTANCE.nullableField("interaction_shape", PlacementData::interaction),
         VoxelShapeLoadable.RotatedLoadable.INSTANCE.defaultField("collision_shape", emptyShapes(), PlacementData::collision),
         TransformationLoadable.INSTANCE.defaultField("transform", Transformation.identity(), PlacementData::trans),
+        FloatLoadable.ANY.defaultField("hardness", 0.5F, PlacementData::hardness),
         PlacementData::new);
 
     /** 展示框样贴墙薄片（NORTH 基准 16×16×1），自动旋转 6 向 */

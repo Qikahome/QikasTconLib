@@ -58,6 +58,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
@@ -95,6 +96,24 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
      */
     public static Direction getItemFacing(BlockState state) {
         return state.getValue(FACING).getOpposite();
+    }
+
+    /**
+     * 挖掘进度按工具放置数据的 hardness 计算（0 = 瞬间挖掉，如火把；默认 0.5）。
+     * Block.hardness 是方块级固定值，无法按放置的工具区分，故覆写此方法。
+     */
+    @Override
+    public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        float hardness = 0.5F;
+        if (level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+            hardness = ToolPlacementDataManager.INSTANCE.get(ptbe.getStack()).hardness();
+        }
+        if (hardness <= 0.0F) {
+            // 0 硬度 = 第一 tick 直接破坏（原版 TNT 等瞬时方块同理）
+            return 1.0F;
+        }
+        int i = ForgeHooks.isCorrectToolForDrops(state, player) ? 30 : 100;
+        return player.getDigSpeed(state, pos) / hardness / (float) i;
     }
 
     /** 按工具查放置数据；BE 缺失（如客户端尚未同步）时回退默认 */
