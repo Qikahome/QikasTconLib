@@ -28,3 +28,6 @@ removed
 forge*changelog.txt
 # Ignore only root-level java files (e.g. reference copies)
 /*.java
+# IPN 反编译/临时产物
+.tmp_ipn/
+.tmp_*

@@ -1,0 +1,32 @@
+modLoader = "javafml" #mandatory
+loaderVersion = "[47,)" #mandatory
+license = "GPL-3.0-or-later"
+issueTrackerURL="https://github.com/crystal-nest/soul-fire-d/issues" #optional
+[[mods]] #mandatory
+  modId = "soul_fire_d" #mandatory
+  version = "4.0.11" #mandatory
+  displayName = "Soul Fire'd" #mandatory
+  updateJSONURL = "https://api.modrinth.com/updates/soul-fire-d/forge_updates.json" #optional (see https://docs.neoforged.net/docs/misc/updatechecker/)
+  displayURL = "https://github.com/crystal-nest/soul-fire-d/tree/1.20.1" #optional (displayed in the mod UI)
+  logoFile = "banner.png" #optional
+  credits = "Blue3141, OnyxRose" #optional
+  authors = "Crystal Spider, Moonstone Webber, Noir" #optional
+  description = '''Let Soul Fire burn!''' #mandatory (Supports multiline text)
+[[dependencies.soul_fire_d]] #optional
+  modId = "forge" #mandatory
+  mandatory = true #mandatory
+  versionRange = "[47,)" #mandatory
+  ordering = "NONE" # The order that this dependency should load in relation to your mod, required to be either 'BEFORE' or 'AFTER' if the dependency is not mandatory
+  side = "BOTH" # Side this dependency is applied on - 'BOTH', 'CLIENT' or 'SERVER'
+[[dependencies.soul_fire_d]]
+  modId = "minecraft"
+  mandatory = true
+  versionRange = "[1.20.1,)"
+  ordering = "NONE"
+  side = "BOTH"
+[[dependencies.soul_fire_d]]
+  modId = "cobweb"
+  mandatory = true
+  versionRange = "[1.0.0,)"
+  ordering = "AFTER"
+  side = "BOTH"

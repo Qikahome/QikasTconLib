@@ -179,6 +179,15 @@ public class VoxelShapeLoadable implements Loadable<VoxelShape> {
      * 把一个 JSON 形状解析成 6 向形状表（自动旋转）的 {@link Loadable}。
      * <p>
      * 与 {@link VoxelShapeLoadable#convertRotated} 对应，供 record 字段直接使用。
+     * <p>
+     * 支持两种写法：
+     * <ul>
+     *   <li>普通形状：同 {@link VoxelShapeLoadable}，按"贴北墙"基准自动旋转到 6 个方向（dir = 物品贴面方向，
+     *       up = 贴天花板、down = 贴地板）；</li>
+     *   <li>per-direction：JSON 对象 key 为方向名（north/south/east/west/up/down）时，每个方向独立指定
+     *       世界坐标形状（像素，不旋转），必须写全 6 个方向。示例：
+     *       {@code {"up": [4,6,4,12,16,12], "down": [4,0,4,12,10,12], ...}}</li>
+     * </ul>
      */
     public static class RotatedLoadable implements Loadable<Map<Direction, VoxelShape>> {
         public static final RotatedLoadable INSTANCE = new RotatedLoadable();
@@ -187,6 +196,36 @@ public class VoxelShapeLoadable implements Loadable<VoxelShape> {
 
         @Override
         public Map<Direction, VoxelShape> convert(JsonElement element, String key, TypedMap context) {
+            // per-direction：JSON 对象 key 为方向名（north/south/east/west/up/down）时，
+            // 每个方向独立指定形状（世界坐标像素，不旋转）；否则沿用单一形状自动旋转 6 向
+            if (element.isJsonObject()) {
+                JsonObject obj = element.getAsJsonObject();
+                boolean perDirection = false;
+                for (String name : obj.keySet()) {
+                    if (Direction.byName(name) != null) {
+                        perDirection = true;
+                        break;
+                    }
+                }
+                if (perDirection) {
+                    if (obj.size() != 6) {
+                        throw new JsonSyntaxException(
+                                "Per-direction shape at " + key + " must define all 6 directions");
+                    }
+                    EnumMap<Direction, VoxelShape> result = new EnumMap<>(Direction.class);
+                    for (Map.Entry<String, JsonElement> entry : obj.entrySet()) {
+                        Direction dir = Direction.byName(entry.getKey());
+                        if (dir == null) {
+                            throw new JsonSyntaxException("Unknown key '" + entry.getKey() + "' at " + key
+                                    + " (expected a direction name)");
+                        }
+                        // NORTH 恒等：按世界坐标直写，不做旋转
+                        result.put(dir, VoxelShapeLoadable.INSTANCE.convertDirection(entry.getValue(),
+                                key + "." + entry.getKey(), context, Direction.NORTH));
+                    }
+                    return result;
+                }
+            }
             return VoxelShapeLoadable.INSTANCE.convertRotated(element, key, context);
         }
 

@@ -99,6 +99,10 @@ public class AutoSizedToolContainerScreen extends AutoSizedContainerScreen<ToolC
     @Override
     protected void renderBg(@Nonnull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         super.renderBg(guiGraphics, partialTick, mouseX, mouseY);
+        // AutoSizedGUI 1.0.8+ 槽位坐标为相对 (leftPos, topPos) 的坐标，
+        // 与物品图标一致需在此手动平移，否则 pattern/高亮会错位
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(this.leftPos, this.topPos, 0F);
         // 玩家背包区的只读槽（工具所在槽位）由 PlayerInventory 包裹，其 render 只画整块背景、
         // 不调用槽位元素渲染，需在此单独绘制选中高亮纹理（对齐官方 ToolContainerScreen 的 SELECTED_X 高亮）
         for (int i = menu.getPlayerInventoryStart(); i < menu.slots.size(); i++) {
@@ -107,8 +111,7 @@ public class AutoSizedToolContainerScreen extends AutoSizedContainerScreen<ToolC
                 readOnly.render(guiGraphics, mouseX, mouseY, partialTick);
             }
         }
-        // 工具槽 pattern 图标（空槽时由 modifier 提供提示图标，对齐官方 ToolContainerScreen.renderBg；
-        // 元素坐标为屏幕绝对坐标，无需 xStart/yStart 偏移）
+        // 工具槽 pattern 图标（空槽时由 modifier 提供提示图标，对齐官方 ToolContainerScreen.renderBg）
         assert minecraft != null;
         Function<ResourceLocation, TextureAtlasSprite> spriteGetter = minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS);
         int start = menu.getToolInventoryStart();
@@ -141,6 +144,7 @@ public class AutoSizedToolContainerScreen extends AutoSizedContainerScreen<ToolC
                 guiGraphics.blit(slot.x, slot.y, 100, 16, 16, sprite);
             }
         }
+        guiGraphics.pose().popPose();
     }
 
     @Override
@@ -207,7 +211,7 @@ public class AutoSizedToolContainerScreen extends AutoSizedContainerScreen<ToolC
         @Override
         public void render(GuiGraphics g, int mx, int my, float pt) {
             // 官方选中高亮纹理（只读槽背景）
-            g.blit(TEXTURE, x - 1, y - 1, 176, 0, 20, 20);
+            g.blit(TEXTURE, x - 2, y - 2, 176, 0, 20, 20);
         }
     }
 

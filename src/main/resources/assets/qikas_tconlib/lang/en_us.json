@@ -1,3 +1,6 @@
 {
-  "block.qikas_tconlib.placed_tool": "Placed %s"
+  "block.qikas_tconlib.placed_tool": "Placed %s",
+  "modifier.qikas_tconlib.soul_fiery": "Soul Fiery",
+  "modifier.qikas_tconlib.soul_fiery.flavor": "Infused with the flames of the soul!",
+  "modifier.qikas_tconlib.soul_fiery.description": "Ignites targets of melee attacks, fired arrows, and counterattacks with soul fire"
 }

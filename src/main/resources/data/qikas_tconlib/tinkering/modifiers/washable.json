@@ -1,9 +1,0 @@
-{
-  "modules": [
-    {
-      "type": "qikas_tconlib:washable"
-    }
-  ],
-  "priority": 500,
-  "tooltip_display": "always"
-}

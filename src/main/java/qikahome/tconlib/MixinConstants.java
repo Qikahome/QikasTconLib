@@ -1,6 +1,9 @@
 package qikahome.tconlib;
 
+import java.util.IdentityHashMap;
 import net.minecraft.resources.ResourceLocation;
+
+import org.anti_ad.mc.ipnext.item.MutableItemStack;
 
 /**
  * Mixin 相关共享常量。
@@ -26,4 +29,12 @@ public final class MixinConstants {
      * （MenuScreens 后写覆盖先写），随后恢复 true。
      */
     public static boolean cancelToolContainerScreenRegister = true;
+
+    /**
+     * IPN 兼容：当前整理沙盒的"栈对象 → 槽索引"映射（IdentityHashMap 按引用比较），
+     * 由 {@code MixinItemPlanner} 在 tracker 入口构建、出口清除，
+     * 供 {@code MixinItemStackExtensionsKt.transferTo} O(1) 定位真实槽。
+     * 泛型仅在编译期，字节码擦除后不引用 IPN 类，IPN 未安装时不影响类加载。
+     */
+    public static final ThreadLocal<IdentityHashMap<MutableItemStack, Integer>> IPN_SLOT_MAP = new ThreadLocal<>();
 }

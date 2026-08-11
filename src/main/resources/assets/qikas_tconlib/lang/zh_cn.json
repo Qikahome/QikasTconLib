@@ -1,3 +1,6 @@
 {
-  "block.qikas_tconlib.placed_tool": "放置的%s"
+  "block.qikas_tconlib.placed_tool": "放置的%s",
+  "modifier.qikas_tconlib.soul_fiery": "灵魂怒火",
+  "modifier.qikas_tconlib.soul_fiery.flavor": "被灵魂之火淬炼！",
+  "modifier.qikas_tconlib.soul_fiery.description": "以灵魂火点燃近战攻击、射出的箭和反击的目标"
 }

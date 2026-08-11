@@ -1,5 +1,8 @@
 package qikahome.tconlib;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
@@ -8,6 +11,7 @@ import com.mojang.logging.LogUtils;
 
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -18,14 +22,17 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.ForgeRenderTypes;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraftforge.client.event.RegisterNamedRenderTypesEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -36,11 +43,16 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.registries.RegistryObject;
 import qikahome.tconlib.client.BlockModifierManager;
+import qikahome.tconlib.client.model.ItemModelOverrideInjector;
 import qikahome.tconlib.client.render.BlockToolModel;
 import qikahome.tconlib.client.render.ModelArmorTextureSupplier;
 import qikahome.tconlib.client.render.PlacedToolBlockEntityRenderer;
 import qikahome.tconlib.client.render.TankModifierModel;
 import qikahome.tconlib.client.screen.AutoSizedToolContainerScreen;
+import qikahome.tconlib.modules.ConditionalHitModifierModuleModule;
+import qikahome.tconlib.modules.ConditionalInventoryTickModifierModule;
+import qikahome.tconlib.modules.SoulFieryAttackModule;
+import qikahome.tconlib.modules.SoulFieryCounterModule;
 import qikahome.tconlib.placeabletool.PlacedToolBlock;
 import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
 import qikahome.tconlib.placeabletool.PlacedToolContainerMenu;
@@ -56,6 +68,8 @@ import qikahome.tconlib.placeabletool.hook.PlacedToolInteractionModifierHook;
 import qikahome.tconlib.placeabletool.hook.PlacedToolLightModifierHook;
 import qikahome.tconlib.placeabletool.hook.PlacedToolTickModifierHook;
 import qikahome.tconlib.placeabletool.hook.ToolPlacingModifierHook;
+import qikahome.tconlib.predicate.LightLevelPredicate;
+import slimeknights.mantle.data.predicate.entity.LivingEntityPredicate;
 import slimeknights.mantle.registration.deferred.BlockEntityTypeDeferredRegister;
 import slimeknights.mantle.registration.deferred.EntityTypeDeferredRegister;
 import slimeknights.mantle.registration.deferred.MenuTypeDeferredRegister;
@@ -71,6 +85,8 @@ import slimeknights.tconstruct.library.tools.item.ranged.ModifiableLauncherItem;
 import slimeknights.tconstruct.tools.TinkerTools;
 import slimeknights.tconstruct.tools.client.ToolContainerScreen;
 import slimeknights.tconstruct.tools.menu.ToolContainerMenu;
+import slimeknights.tconstruct.tools.modules.armor.FieryCounterModule;
+import slimeknights.tconstruct.tools.modules.combat.FieryAttackModule;
 
 // 这里的值应该与META-INF/mods.toml文件中的条目匹配
 @Mod(TconLib.MODID)
@@ -106,6 +122,18 @@ public class TconLib {
                     PlacedToolLightModule.MinimumLightModule.LOADER);
             ModifierModule.LOADER.register(getResource("projectile_placing"), ProjectileToolPlacingModule.LOADER);
             ModifierModule.LOADER.register(getResource("washable"), WashableModule.LOADER);
+            ModifierModule.LOADER.register(getResource("conditional_hit_module"),
+                    ConditionalHitModifierModuleModule.LOADER);
+            ModifierModule.LOADER.register(getResource("conditional_inventory_tick_module"),
+                    ConditionalInventoryTickModifierModule.LOADER);
+            boolean soulFireLoaded = ModList.get().isLoaded(it.crystalnest.soul_fire_d.Constants.MOD_ID);
+            ModifierModule.LOADER.register(getResource("soul_fiery_attack"),
+                    soulFireLoaded ? SoulFieryAttackModule.LOADER
+                            : FieryAttackModule.LOADER.xmap((a, b) -> a, (a, b) -> a));
+            ModifierModule.LOADER.register(getResource("soul_fiery_counter"),
+                    soulFireLoaded ? SoulFieryCounterModule.LOADER
+                            : FieryCounterModule.LOADER.xmap((a, b) -> a, (a, b) -> a));
+            LivingEntityPredicate.LOADER.register(getResource("light_level"), LightLevelPredicate.LOADER);
         }
 
     }
@@ -116,8 +144,7 @@ public class TconLib {
             (tool, modifier, context, placeContext, source, state, toolStack) -> state);
 
     public static final ModuleHook<PlacedToolInteractionModifierHook> PLACED_TOOL_INTERACTION_HOOK = ModifierHooks
-            .register(
-                    getResource("placed_tool_interaction"), PlacedToolInteractionModifierHook.class,
+            .register(getResource("placed_tool_interaction"), PlacedToolInteractionModifierHook.class,
                     PlacedToolInteractionModifierHook.AllMerger::new, new PlacedToolInteractionModifierHook() {
                     });
 
@@ -190,12 +217,17 @@ public class TconLib {
 
         public static boolean cancelToolContainerScreenRegister = true;
         private static final MenuScreens.ScreenConstructor<ToolContainerMenu, AbstractContainerScreen<ToolContainerMenu>> provider = (
-                a, b, c) -> Config.ENABLE_AUTO_SIZED_TOOL_SCREEN.get() ? new AutoSizedToolContainerScreen(a, b, c)
-                        : new ToolContainerScreen(a, b, c);
+                a, b, c) -> {
+            if (Config.ENABLE_AUTO_SIZED_TOOL_SCREEN.get() && a.getPlayerInventoryStart() > 18) {
+                return new AutoSizedToolContainerScreen(a, b, c);
+            }
+            return new ToolContainerScreen(a, b, c);
+        };
 
         @SubscribeEvent
         public static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
             BlockModifierManager.init(event);
+            ItemModelOverrideInjector.init(event);
         }
 
         @SubscribeEvent
@@ -207,6 +239,21 @@ public class TconLib {
         public static void registerModelLoaders(ModelEvent.RegisterGeometryLoaders event) {
             event.register("block_tool", BlockToolModel.LOADER);
             event.register("tank_modifier", TankModifierModel.LOADER);
+        }
+
+        @SubscribeEvent
+        public static void onRegisterNamedRenderTypes(RegisterNamedRenderTypesEvent event) {
+            // 完整注册 ForgeRenderTypes 的全部 item 渲染变体，供模型 JSON 的 render_type 直接引用
+            // （block 变体仅为满足注册约束占位，实际主要走 item/放置工具渲染）
+            event.register("item_layered_solid", RenderType.solid(), ForgeRenderTypes.ITEM_LAYERED_SOLID.get());
+            event.register("item_layered_cutout", RenderType.cutout(), ForgeRenderTypes.ITEM_LAYERED_CUTOUT.get());
+            event.register("item_layered_cutout_mipped", RenderType.cutoutMipped(), ForgeRenderTypes.ITEM_LAYERED_CUTOUT_MIPPED.get());
+            event.register("item_layered_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_LAYERED_TRANSLUCENT.get());
+            // 带光照 + 不排序的 translucent，与 Forge 原生流体桶（DynamicFluidContainerModel）流体层一致，
+            // 用于放置桶等含半透明流体模型：不排序可避免深度排序导致的面剔除（漏底），保留平滑光照
+            event.register("item_unsorted_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_UNSORTED_TRANSLUCENT.get());
+            event.register("item_unlit_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_UNLIT_TRANSLUCENT.get());
+            event.register("item_unsorted_unlit_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_UNSORTED_UNLIT_TRANSLUCENT.get());
         }
 
         @SubscribeEvent

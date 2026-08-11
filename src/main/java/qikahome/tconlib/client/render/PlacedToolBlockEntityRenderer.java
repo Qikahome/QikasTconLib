@@ -5,14 +5,18 @@ import com.mojang.math.Axis;
 import com.mojang.math.Transformation;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 
 import qikahome.tconlib.TconLib;
@@ -73,8 +77,16 @@ public class PlacedToolBlockEntityRenderer implements BlockEntityRenderer<Placed
             };
             stack.getOrCreateTag().putInt(PLACED_MODEL_TAG, value);
         }
-        Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.FIXED, light,
-                OverlayTexture.NO_OVERLAY, matrices, buffer, be.getLevel(), 0);
+        // 采样该位置实际环境光照（天空光 + 方块光），并与工具自发光等级（LIGHT 属性）取大：
+        // 发光模块点亮时不被环境压暗，未发光时正常随环境明暗变化
+        int lightLevel = state.getValue(PlacedToolBlock.LIGHT);
+        Level level = be.getLevel();
+        BlockPos pos = be.getBlockPos();
+        int skyLight = level.getBrightness(LightLayer.SKY, pos);
+        int blockLight = Math.max(level.getBrightness(LightLayer.BLOCK, pos), lightLevel);
+        int packedLight = LightTexture.pack(blockLight, skyLight);
+        Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.FIXED, packedLight,
+                OverlayTexture.NO_OVERLAY, matrices, buffer, level, 0);
         matrices.popPose();
     }
 }

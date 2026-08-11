@@ -53,3 +53,11 @@ description='''${mod_description}'''
     versionRange="${autosizedgui_range}"
     ordering="NONE"
     side="BOTH"
+
+# Inventory Profiles Next 依赖 - 可选兼容（IPN 兼容 mixin，仅 1.10.x 验证过）
+[[dependencies.${mod_id}]]
+    modId="inventoryprofilesnext"
+    mandatory=false
+    versionRange="${ipn_range}"
+    ordering="NONE"
+    side="CLIENT"

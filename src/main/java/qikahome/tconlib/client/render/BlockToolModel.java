@@ -67,6 +67,7 @@ import slimeknights.tconstruct.library.client.materials.MaterialRenderInfo;
 import slimeknights.tconstruct.library.client.materials.MaterialRenderInfo.TintedSprite;
 import slimeknights.tconstruct.library.client.materials.MaterialRenderInfoLoader;
 import slimeknights.tconstruct.library.client.model.ModelProperties;
+import slimeknights.tconstruct.library.client.model.tools.NestedOverrides;
 import slimeknights.tconstruct.library.materials.definition.MaterialVariantId;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.modifiers.ModifierId;
@@ -208,20 +209,21 @@ public class BlockToolModel implements IUnbakedGeometry<BlockToolModel> {
 
     private static class BakedBlockTool extends DynamicBakedWrapper<BakedModel> {
         // ========== 内部类：动态覆盖器（处理 ItemStack 中的 NBT 数据） ==========
-        private static class ToolOverrides extends ItemOverrides {
+        // 继承 TCon 的 NestedOverrides：override 命中（如放置形态模型切换）时会递归解析目标模型自身的
+        // overrides（带 ignoreNested 防环），使目标模型也能套用其材料/强化烘焙，否则会丢失染色与强化模型
+        private static class ToolOverrides extends NestedOverrides {
             private final BakedBlockTool baked;
-            private final ItemOverrides nested;
 
             public ToolOverrides(BakedBlockTool baked, ItemOverrides nested) {
+                super(nested);
                 this.baked = baked;
-                this.nested = nested;
             }
 
             @Nullable
             @Override
             public BakedModel resolve(BakedModel originalModel, ItemStack stack, @Nullable ClientLevel world,
                     @Nullable LivingEntity entity, int seed) {
-                BakedModel resolved = nested.resolve(originalModel, stack, world, entity, seed);
+                BakedModel resolved = super.resolve(originalModel, stack, world, entity, seed);
                 if (resolved != originalModel) {
                     return resolved;
                 }

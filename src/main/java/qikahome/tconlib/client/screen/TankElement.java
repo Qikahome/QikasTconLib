@@ -103,7 +103,12 @@ public class TankElement implements ILayoutElement, ClickableTankModule {
         int fluidWidth = getFluidWidth();
         if (getFluidWidth() > 0) {
             RenderSystem.enableBlend();
-            GuiUtil.renderTiledFluid(g.pose(), screen, fluid, x + FLUID_X - 1, y + FLUID_Y - 1, fluidWidth,
+            // GuiUtil.renderTiledFluid 内部会自行加上 screen.leftPos/topPos（官方约定传相对 leftPos 的坐标），
+            // 而本元素在 panel 的 translate(origin) 内用相对坐标渲染，二者叠加会双重偏移。
+            // 传入时先减去 getGuiLeft()/getGuiTop()，抵消该内部偏移。
+            int fluidX = x + FLUID_X - screen.getGuiLeft();
+            int fluidY = y + FLUID_Y - screen.getGuiTop();
+            GuiUtil.renderTiledFluid(g.pose(), screen, fluid, fluidX, fluidY, fluidWidth,
                     MODULE_HEIGHT, 100);
         }
 
@@ -150,20 +155,33 @@ public class TankElement implements ILayoutElement, ClickableTankModule {
 
     @Override
     public boolean isHovered(int mx, int my) {
+        int rx = toRelX(mx);
+        int ry = toRelY(my);
         // 交互区域：整个罐子元素矩形（四周扩 1px），保证点击纹理任意位置都能触发流体转移
-        return mx >= x - 1 && my >= y - 1 && mx < x + WIDTH + 1 && my < y + HEIGHT + 1;
+        return rx >= x - 1 && ry >= y - 1 && rx < x + WIDTH + 1 && ry < y + HEIGHT + 1;
     }
 
     /** 视觉悬停区域：仅流体条模块（160×8，四周扩 1px），高亮/tooltip 用 */
     private boolean isModuleHovered(int mx, int my) {
+        int rx = toRelX(mx);
+        int ry = toRelY(my);
         int modX = x + FLUID_X;
         int modY = y + FLUID_Y;
-        return mx >= modX - 1 && my >= modY - 1 && mx < modX + MODULE_WIDTH + 1 && my < modY + MODULE_HEIGHT + 1;
+        return rx >= modX - 1 && ry >= modY - 1 && rx < modX + MODULE_WIDTH + 1 && ry < modY + MODULE_HEIGHT + 1;
     }
 
     @Override
     public boolean isFluidHovered(int check) {
-        return check - x - FLUID_X <= getFluidWidth();
+        return toRelX(check) - x - FLUID_X <= getFluidWidth();
+    }
+
+    /** 屏幕坐标 → 元素相对坐标（AutoSizedGUI 1.0.8+ 槽位坐标为相对 leftPos/topPos 的坐标） */
+    private int toRelX(double absX) {
+        return (int) absX - (screen.getGuiLeft() - 1);
+    }
+
+    private int toRelY(double absY) {
+        return (int) absY - (screen.getGuiTop() - 1);
     }
 
     private int getFluidWidth() {

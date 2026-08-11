@@ -148,6 +148,13 @@ repositories {
         name "Progwml6's maven"
         url "https://dvs1.progwml6.com/files/maven/"
     }
+
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
     // Modrinth Maven 仓库（备用）
     exclusiveContent {
         forRepository {
@@ -169,6 +176,12 @@ repositories {
     maven {
         name = "CyclopsMC"
         url = "https://maven.cyclopsmc.net/"
+    }
+    // Crystal Nest Maven 仓库（Soul Fire'd 及 Cobweb）
+    // 注意：不能用 exclusiveContent 过滤，否则 fg.deobf 解析会失败
+    maven {
+        name = "Crystal Nest"
+        url = "https://maven.crystalnest.it"
     }
 }
 
@@ -207,7 +220,7 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:cyclops-core-232758:7637992")
 
     // AutoSizedGUI - 自动布局GUI（jarjar 嵌入）
-    implementation jarJar(fg.deobf("qikahome:AutoSizedGUI-1.20.1:1.0.8")) {
+    implementation jarJar(fg.deobf("qikahome:AutoSizedGUI-1.20.1:1.0.8b")) {
         jarJar.ranged(it, "[1.0,2.0)")
     }
 
@@ -229,6 +242,17 @@ dependencies {
     compileOnly fg.deobf("curse.maven:the-twilight-forest-227639:4635921")
     runtimeOnly fg.deobf("curse.maven:the-twilight-forest-227639:4635921")
 
+    // Soul Fire'd - 可选依赖（灵魂火 API，用于灵魂怒火模块）
+    // Modrinth: https://modrinth.com/mod/soul-fire-d
+    compileOnly fg.deobf("it.crystalnest:soul-fire-d-forge:${minecraft_version}-${soul_fire_d_version}")
+    runtimeOnly fg.deobf("it.crystalnest:soul-fire-d-forge:${minecraft_version}-${soul_fire_d_version}")
+    // Cobweb - Soul Fire'd 的强制前置（1.20.1 只需这一个，FCAP 仅 ≥1.20.2 需要）
+    runtimeOnly fg.deobf("it.crystalnest:cobweb-forge:${minecraft_version}-${cobweb_version}")
+
+    implementation fg.deobf("curse.maven:inventory-profiles-next-495267:7565992")
+    implementation fg.deobf("curse.maven:libipn-679177:5208511")
+    implementation fg.deobf("curse.maven:kotlin-for-forge-351264:7291067")
+
     // 更多依赖配置参考：
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
@@ -248,7 +272,8 @@ tasks.named('processResources', ProcessResources).configure {
             jei_range: jei_range,
             tconstruct_range: tconstruct_range,
             mantle_range: mantle_range,
-            autosizedgui_range: autosizedgui_range
+            autosizedgui_range: autosizedgui_range,
+            ipn_range: ipn_range
     ]
     inputs.properties replaceProperties // 将变量纳入任务输入（用于增量构建）
 

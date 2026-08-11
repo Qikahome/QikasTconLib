@@ -8,8 +8,13 @@
     "MixinThresholdSwitchBlockEntity"
   ],
   "client": [
-    "MixinToolContainerScreen"
+    "MixinModelBakery",
+    "MixinToolContainerScreen",
+    "MixinAreaTypes",
+    "MixinItemStackExtensionsKt",
+    "MixinAdvancedContainer$tracker$2$1",
+    "MixinSubTrackerActionsKt"
   ],
-  "server": [],
+  "server": [ ],
   "minVersion": "0.8"
 }
