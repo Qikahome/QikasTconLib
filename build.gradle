@@ -220,7 +220,7 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:cyclops-core-232758:7637992")
 
     // AutoSizedGUI - 自动布局GUI（jarjar 嵌入）
-    implementation jarJar(fg.deobf("qikahome:AutoSizedGUI-1.20.1:1.0.8b")) {
+    implementation jarJar(fg.deobf("qikahome:AutoSizedGUI-1.20.1:${autosizedgui_version}")) {
         jarJar.ranged(it, "[1.0,2.0)")
     }
 

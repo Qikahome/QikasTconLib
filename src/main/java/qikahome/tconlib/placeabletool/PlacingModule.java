@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import qikahome.tconlib.TconLib;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 import slimeknights.mantle.data.loadable.primitive.BooleanLoadable;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
@@ -108,8 +109,8 @@ public record PlacingModule(boolean requireSneaking, boolean beforeBlockUse)
 
         // setBlock 时 BaseEntityBlock 已自动创建了 BlockEntity，这里取出并写入工具
         BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof PlacedToolBlock.PlacedToolBlockEntity ptbe)) {
-            TconLib.LOGGER.error("Failed to place tool at {}: expected PlacedToolBlockEntity, got {}", pos,
+        if (!(be instanceof IToolBlockEntity ptbe)) {
+            TconLib.LOGGER.error("Failed to place tool at {}: expected IToolBlockEntity, got {}", pos,
                     be == null ? "null" : be.getClass().getName());
             return FAIL;
         }

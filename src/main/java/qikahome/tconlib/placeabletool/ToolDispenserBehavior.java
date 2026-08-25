@@ -25,6 +25,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import qikahome.tconlib.TconLib;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.tools.nbt.ToolStack;
 
@@ -115,7 +116,7 @@ public class ToolDispenserBehavior implements DispenseItemBehavior {
         if (state == null || !level.setBlock(pos, state, Block.UPDATE_ALL)) {
             return false;
         }
-        if (level.getBlockEntity(pos) instanceof PlacedToolBlock.PlacedToolBlockEntity ptbe) {
+        if (level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe) {
             ptbe.setStack(stack.copy());
         } else {
             // BE 创建失败：回滚并视为失败

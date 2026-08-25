@@ -49,6 +49,7 @@ import qikahome.tconlib.client.render.ModelArmorTextureSupplier;
 import qikahome.tconlib.client.render.PlacedToolBlockEntityRenderer;
 import qikahome.tconlib.client.render.TankModifierModel;
 import qikahome.tconlib.client.screen.AutoSizedToolContainerScreen;
+import qikahome.tconlib.hook.ImageTooltipModifierHook;
 import qikahome.tconlib.modules.ConditionalHitModifierModuleModule;
 import qikahome.tconlib.modules.ConditionalInventoryTickModifierModule;
 import qikahome.tconlib.modules.SoulFieryAttackModule;
@@ -164,6 +165,10 @@ public class TconLib {
                     PlacedToolFluidStateChangeModifierHook.AllMerger::new,
                     new PlacedToolFluidStateChangeModifierHook() {
                     });
+
+    public static final ModuleHook<ImageTooltipModifierHook> IMAGE_TOOLTIP_MODIFIER_HOOK = ModifierHooks
+            .register(getResource("image_tooltip"), ImageTooltipModifierHook.class,
+                    ImageTooltipModifierHook.FirstMerger::new, (a, b) -> null);
     // endregion
 
     public TconLib(FMLJavaModLoadingContext context) {
@@ -247,13 +252,18 @@ public class TconLib {
             // （block 变体仅为满足注册约束占位，实际主要走 item/放置工具渲染）
             event.register("item_layered_solid", RenderType.solid(), ForgeRenderTypes.ITEM_LAYERED_SOLID.get());
             event.register("item_layered_cutout", RenderType.cutout(), ForgeRenderTypes.ITEM_LAYERED_CUTOUT.get());
-            event.register("item_layered_cutout_mipped", RenderType.cutoutMipped(), ForgeRenderTypes.ITEM_LAYERED_CUTOUT_MIPPED.get());
-            event.register("item_layered_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_LAYERED_TRANSLUCENT.get());
+            event.register("item_layered_cutout_mipped", RenderType.cutoutMipped(),
+                    ForgeRenderTypes.ITEM_LAYERED_CUTOUT_MIPPED.get());
+            event.register("item_layered_translucent", RenderType.translucent(),
+                    ForgeRenderTypes.ITEM_LAYERED_TRANSLUCENT.get());
             // 带光照 + 不排序的 translucent，与 Forge 原生流体桶（DynamicFluidContainerModel）流体层一致，
             // 用于放置桶等含半透明流体模型：不排序可避免深度排序导致的面剔除（漏底），保留平滑光照
-            event.register("item_unsorted_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_UNSORTED_TRANSLUCENT.get());
-            event.register("item_unlit_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_UNLIT_TRANSLUCENT.get());
-            event.register("item_unsorted_unlit_translucent", RenderType.translucent(), ForgeRenderTypes.ITEM_UNSORTED_UNLIT_TRANSLUCENT.get());
+            event.register("item_unsorted_translucent", RenderType.translucent(),
+                    ForgeRenderTypes.ITEM_UNSORTED_TRANSLUCENT.get());
+            event.register("item_unlit_translucent", RenderType.translucent(),
+                    ForgeRenderTypes.ITEM_UNLIT_TRANSLUCENT.get());
+            event.register("item_unsorted_unlit_translucent", RenderType.translucent(),
+                    ForgeRenderTypes.ITEM_UNSORTED_UNLIT_TRANSLUCENT.get());
         }
 
         @SubscribeEvent

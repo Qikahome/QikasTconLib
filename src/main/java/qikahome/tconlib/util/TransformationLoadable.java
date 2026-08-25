@@ -1,6 +1,5 @@
 package qikahome.tconlib.util;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.math.Transformation;
@@ -67,15 +66,18 @@ public class TransformationLoadable implements Loadable<Transformation> {
 
     @Override
     public JsonElement serialize(Transformation object) {
-        var matrix = object.getMatrix();
-        var arr = new JsonArray();
-        float[] values = new float[16];
-        matrix.get(values);
-        for (float v : values) {
-            arr.add(v);
-        }
+        // 与 convert 对称：输出结构化字段（translation/rotation/scale），避免 matrix 无法读回
         var obj = new JsonObject();
-        obj.add("matrix", arr);
+        obj.add("translation", Vector3fLoadable.INSTANCE.serialize(object.getTranslation()));
+        obj.add("scale", Vector3fLoadable.INSTANCE.serialize(object.getScale()));
+        Quaternionf left = object.getLeftRotation();
+        if (left != null) {
+            obj.add("left_rotation", RotationLoadable.INSTANCE.serialize(left));
+        }
+        Quaternionf right = object.getRightRotation();
+        if (right != null) {
+            obj.add("right_rotation", RotationLoadable.INSTANCE.serialize(right));
+        }
         return obj;
     }
 

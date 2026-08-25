@@ -105,7 +105,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
     @Override
     public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
         float hardness = 0.5F;
-        if (level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+        if (level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe) {
             hardness = ToolPlacementDataManager.INSTANCE.get(ptbe.getStack()).hardness();
         }
         if (hardness <= 0.0F) {
@@ -165,7 +165,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
             BlockHitResult hit) {
-        if (level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+        if (level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe) {
             ToolStack tool = ToolStack.from(ptbe.getStack());
             // 内建逻辑（流体交互/打开物品栏）之前：模块可短路自定义交互
             for (ModifierEntry entry : tool.getModifierList()) {
@@ -182,8 +182,8 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
                     || ModifierUtil.checkVolatileFlag(ptbe.getStack(), ToolInventoryCapability.CRAFTING_TABLE)
                     || ModifierUtil.checkVolatileFlag(ptbe.getStack(),
                             ToolInventoryCapability.INVENTORY_CRAFTING))) {
-                if (player instanceof ServerPlayer serverPlayer)
-                    NetworkHooks.openScreen(serverPlayer, ptbe, buf -> {
+                if (player instanceof ServerPlayer serverPlayer && ptbe instanceof MenuProvider menuProvider)
+                    NetworkHooks.openScreen(serverPlayer, menuProvider, buf -> {
                         buf.writeBlockPos(pos);
                         buf.writeItemStack(ptbe.getStack(), false);
                     });
@@ -208,7 +208,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
         // 含水状态变化（同一方块类型的属性变化）也走 onRemove：通知 modifier
         if (!level.isClientSide && oldState.getBlock() == newState.getBlock()
                 && oldState.getValue(WATERLOGGED) != newState.getValue(WATERLOGGED)
-                && level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+                && level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe) {
             ToolStack tool = ToolStack.from(ptbe.getStack());
             boolean waterlogged = newState.getValue(WATERLOGGED);
             for (ModifierEntry entry : tool.getModifierList()) {
@@ -218,7 +218,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
         }
         if (!oldState.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof PlacedToolBlockEntity ptbe && !ptbe.getStack().isEmpty()) {
+            if (be instanceof IToolBlockEntity ptbe && !ptbe.getStack().isEmpty()) {
                 ItemEntity itementity = new ItemEntity(level, pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D,
                         ptbe.getStack().copy());
                 itementity.setDeltaMovement(level.random.triangle(0.0D, 0.11485000171139836D),
@@ -256,7 +256,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
     @Override
     public boolean canPlaceLiquid(BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
         // 可被水冲掉的工具：拒绝任何液体放入（桶倒水/含水）；自然流动由 MixinFlowingFluid 放行并破坏
-        if (level instanceof Level lv && level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe
+        if (level instanceof Level lv && level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe
                 && canWashAway(lv, pos, state, ptbe.getStack())) {
             return false;
         }
@@ -283,7 +283,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
             level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
         }
         // 需要支撑的工具：支撑方向被破坏时计划销毁（走 onRemove 掉落工具）
-        if (level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+        if (level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe) {
             PlacementData data = ToolPlacementDataManager.INSTANCE.get(ptbe.getStack());
             if (data.getSupportDirection(state) == direction && !data.isSupported(level, pos, state)) {
                 level.scheduleTick(pos, this, 1);
@@ -298,7 +298,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
             return false;
         }
         // 需要支撑的工具：按放置数据校验支撑（如贴墙工具在墙被拆掉后失效）
-        if (level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+        if (level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe) {
             return ToolPlacementDataManager.INSTANCE.get(ptbe.getStack()).isSupported(level, pos, state);
         }
         return true;
@@ -347,13 +347,13 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
 
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
-        if (level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe) {
+        if (level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe) {
             return ptbe.getStack().copy();
         }
         return ItemStack.EMPTY;
     }
 
-    public static class PlacedToolBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider, Nameable {
+    public static class PlacedToolBlockEntity extends BlockEntity implements WorldlyContainer, MenuProvider, Nameable, IToolBlockEntity {
         public PlacedToolBlockEntity(BlockEntityType<?> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
             super(p_155228_, p_155229_, p_155230_);
         }
@@ -779,5 +779,17 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
         }
 
     }
-
+    /**
+     * 放置工具方块实体接口：实现者须为方块实体（{@link BlockEntity}）。
+     * 接口本身不能继承类（Java 语法限制），需要同时使用 BE 方法与接口方法时，
+     * 用泛型交集 {@code <T extends BlockEntity & IToolBlockEntity>}（见 PlacedToolContainerMenu）。
+     */
+    public static interface IToolBlockEntity{
+        void setStack(ItemStack stack);
+        ToolStack getToolStack();
+        ItemStack getStack();
+        IItemHandlerModifiable getHandler();
+        void addViewer(ServerPlayer player);
+        void removeViewer(ServerPlayer player);
+    }
 }

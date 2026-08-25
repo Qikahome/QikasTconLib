@@ -13,6 +13,7 @@ import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -21,7 +22,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.RegistryObject;
 import qikahome.tconlib.TconLib;
-import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 import qikahome.tconlib.placeabletool.hook.PlacedToolTickModifierHook;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.mantle.data.loadable.record.SingletonLoader;
@@ -58,10 +59,10 @@ public enum PlacedToolInventoryTickModule implements ModifierModule, PlacedToolT
 
     @Override
     public void onTick(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level, BlockPos pos,
-            PlacedToolBlockEntity ptbe) {
+            IToolBlockEntity ptbe) {
         var stack = ptbe.getStack();
         var fakeLiving = getFakeForLevel(level);
-        fakeLiving.setPos(ptbe.getBlockPos().getCenter());
+        fakeLiving.setPos(((BlockEntity) ptbe).getBlockPos().getCenter());
         fakeLiving.stack = stack;
         fakeLiving.isInWater = state.getValue(BlockStateProperties.WATERLOGGED);
         fakeLiving.tickCount = (int) level.getGameTime();

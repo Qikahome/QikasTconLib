@@ -5,7 +5,7 @@ import java.util.Collection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
 
@@ -28,13 +28,13 @@ public interface PlacedToolLightModifierHook {
      * @return 新的发光等级（调用方会夹取到 0-15）
      */
     int getLightLevel(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level, BlockPos pos,
-            PlacedToolBlockEntity ptbe, int light);
+            IToolBlockEntity ptbe, int light);
 
     /** 按集合顺序折叠执行所有钩子：前一个的结果作为后一个的输入 */
     record AllMerger(Collection<PlacedToolLightModifierHook> modules) implements PlacedToolLightModifierHook {
         @Override
         public int getLightLevel(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level,
-                BlockPos pos, PlacedToolBlockEntity ptbe, int light) {
+                BlockPos pos, IToolBlockEntity ptbe, int light) {
             for (PlacedToolLightModifierHook hook : modules) {
                 light = hook.getLightLevel(tool, modifier, state, level, pos, ptbe, light);
             }

@@ -5,7 +5,8 @@
   "refmap": "qikas_tconlib.refmap.json",
   "mixins": [
     "MixinFlowingFluid",
-    "MixinThresholdSwitchBlockEntity"
+    "MixinThresholdSwitchBlockEntity",
+    "MixinItem"
   ],
   "client": [
     "MixinModelBakery",

@@ -7,7 +7,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fluids.FluidStack;
 import qikahome.tconlib.TconLib;
-import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 import qikahome.tconlib.placeabletool.hook.PlacedToolLightModifierHook;
 import slimeknights.mantle.data.loadable.record.RecordLoadable;
 import slimeknights.mantle.data.loadable.record.SingletonLoader;
@@ -44,7 +44,7 @@ public final class PlacedToolLightModule {
 
         @Override
         public int getLightLevel(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level,
-                BlockPos pos, PlacedToolBlockEntity ptbe, int light) {
+                BlockPos pos, IToolBlockEntity ptbe, int light) {
             FluidStack fluid = ToolTankHelper.TANK_HELPER.getFluid(tool);
             return fluid.isEmpty() ? light
                     : Math.max(light, fluid.getFluid().getFluidType().getLightLevel(fluid));
@@ -71,7 +71,7 @@ public final class PlacedToolLightModule {
 
         @Override
         public int getLightLevel(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level,
-                BlockPos pos, PlacedToolBlockEntity ptbe, int light) {
+                BlockPos pos, IToolBlockEntity ptbe, int light) {
             return Math.max(light, this.light.compute(modifier.getLevel()));
         }
     }

@@ -94,8 +94,8 @@ public enum ProjectileToolPlacingModule implements ModifierModule, ProjectileHit
         if (state == null || !level.setBlock(pos, state, Block.UPDATE_ALL)) {
             return false;
         }
-        if (!(level.getBlockEntity(pos) instanceof PlacedToolBlock.PlacedToolBlockEntity ptbe)) {
-            TconLib.LOGGER.error("Failed to place thrown tool at {}: expected PlacedToolBlockEntity, got {}", pos,
+        if (!(level.getBlockEntity(pos) instanceof PlacedToolBlock.IToolBlockEntity ptbe)) {
+            TconLib.LOGGER.error("Failed to place thrown tool at {}: expected IToolBlockEntity, got {}", pos,
                     level.getBlockEntity(pos) == null ? "null" : level.getBlockEntity(pos).getClass().getName());
             return false;
         }

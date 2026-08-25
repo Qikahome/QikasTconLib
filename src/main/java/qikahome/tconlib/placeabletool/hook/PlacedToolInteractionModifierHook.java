@@ -9,7 +9,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
 
@@ -35,7 +35,7 @@ public interface PlacedToolInteractionModifierHook {
      * @return 交互结果；默认 {@code PASS}
      */
     default InteractionResult before(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level,
-            BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, PlacedToolBlockEntity ptbe) {
+            BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, IToolBlockEntity ptbe) {
         return InteractionResult.PASS;
     }
 
@@ -54,7 +54,7 @@ public interface PlacedToolInteractionModifierHook {
      * @return 交互结果；默认 {@code PASS}
      */
     default InteractionResult after(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level,
-            BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, PlacedToolBlockEntity ptbe) {
+            BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, IToolBlockEntity ptbe) {
         return InteractionResult.PASS;
     }
 
@@ -62,7 +62,7 @@ public interface PlacedToolInteractionModifierHook {
     record AllMerger(Collection<PlacedToolInteractionModifierHook> modules) implements PlacedToolInteractionModifierHook {
         @Override
         public InteractionResult before(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level,
-                BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, PlacedToolBlockEntity ptbe) {
+                BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, IToolBlockEntity ptbe) {
             InteractionResult result = InteractionResult.PASS;
             for (PlacedToolInteractionModifierHook hook : modules) {
                 result = hook.before(tool, modifier, state, level, pos, player, hand, hit, ptbe);
@@ -75,7 +75,7 @@ public interface PlacedToolInteractionModifierHook {
 
         @Override
         public InteractionResult after(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level,
-                BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, PlacedToolBlockEntity ptbe) {
+                BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit, IToolBlockEntity ptbe) {
             InteractionResult result = InteractionResult.PASS;
             for (PlacedToolInteractionModifierHook hook : modules) {
                 result = hook.after(tool, modifier, state, level, pos, player, hand, hit, ptbe);

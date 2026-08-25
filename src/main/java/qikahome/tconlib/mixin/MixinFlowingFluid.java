@@ -16,7 +16,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
 import qikahome.tconlib.placeabletool.PlacedToolBlock;
-import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 
 /**
  * 让"可被水冲掉的放置工具"被自然流动的水破坏。自然流动链路共三道闸门，全部需要放行：
@@ -40,7 +40,7 @@ public abstract class MixinFlowingFluid {
             CallbackInfoReturnable<Boolean> cir) {
         // 目标方块是可被水冲掉的放置工具：让水流把该方向列为候选扩散方向
         if (!cir.getReturnValueZ() && neighborState.getBlock() instanceof PlacedToolBlock
-                && level instanceof Level lv && level.getBlockEntity(neighborPos) instanceof PlacedToolBlockEntity ptbe
+                && level instanceof Level lv && level.getBlockEntity(neighborPos) instanceof IToolBlockEntity ptbe
                 && PlacedToolBlock.canWashAway(lv, neighborPos, neighborState, ptbe.getStack())) {
             cir.setReturnValue(true);
         }
@@ -52,7 +52,7 @@ public abstract class MixinFlowingFluid {
             CallbackInfoReturnable<Boolean> cir) {
         // 目标方块是可被水冲掉的放置工具：放行扩散（spreadTo 中会破坏该方块）
         if (!cir.getReturnValueZ() && neighborState.getBlock() instanceof PlacedToolBlock
-                && level instanceof Level lv && level.getBlockEntity(neighborPos) instanceof PlacedToolBlockEntity ptbe
+                && level instanceof Level lv && level.getBlockEntity(neighborPos) instanceof IToolBlockEntity ptbe
                 && PlacedToolBlock.canWashAway(lv, neighborPos, neighborState, ptbe.getStack())) {
             cir.setReturnValue(true);
         }
@@ -63,7 +63,7 @@ public abstract class MixinFlowingFluid {
             FluidState fluid, CallbackInfo ci) {
         // 水流动过可被冲掉的放置工具：替换成水（setBlock 触发 onRemove 掉落工具），并取消原逻辑
         if (state.getBlock() instanceof PlacedToolBlock && level instanceof Level lv
-                && level.getBlockEntity(pos) instanceof PlacedToolBlockEntity ptbe
+                && level.getBlockEntity(pos) instanceof IToolBlockEntity ptbe
                 && PlacedToolBlock.canWashAway(lv, pos, state, ptbe.getStack())) {
             level.setBlock(pos, fluid.createLegacyBlock(), 3);
             ci.cancel();

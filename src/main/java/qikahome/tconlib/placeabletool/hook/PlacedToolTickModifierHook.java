@@ -5,7 +5,7 @@ import java.util.Collection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import qikahome.tconlib.placeabletool.PlacedToolBlock.PlacedToolBlockEntity;
+import qikahome.tconlib.placeabletool.PlacedToolBlock.IToolBlockEntity;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
 
@@ -23,13 +23,13 @@ public interface PlacedToolTickModifierHook {
      * @param ptbe     放置工具方块实体
      */
     void onTick(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level, BlockPos pos,
-            PlacedToolBlockEntity ptbe);
+            IToolBlockEntity ptbe);
 
     /** 按集合顺序依次执行所有钩子 */
     record AllMerger(Collection<PlacedToolTickModifierHook> modules) implements PlacedToolTickModifierHook {
         @Override
         public void onTick(IToolStackView tool, ModifierEntry modifier, BlockState state, Level level, BlockPos pos,
-                PlacedToolBlockEntity ptbe) {
+                IToolBlockEntity ptbe) {
             for (PlacedToolTickModifierHook hook : modules) {
                 hook.onTick(tool, modifier, state, level, pos, ptbe);
             }
