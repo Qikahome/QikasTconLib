@@ -52,6 +52,7 @@ import qikahome.tconlib.client.screen.AutoSizedToolContainerScreen;
 import qikahome.tconlib.hook.ImageTooltipModifierHook;
 import qikahome.tconlib.modules.ConditionalHitModifierModuleModule;
 import qikahome.tconlib.modules.ConditionalInventoryTickModifierModule;
+import qikahome.tconlib.modules.ModifierModuleInjector;
 import qikahome.tconlib.modules.SoulFieryAttackModule;
 import qikahome.tconlib.modules.SoulFieryCounterModule;
 import qikahome.tconlib.placeabletool.PlacedToolBlock;
@@ -69,6 +70,7 @@ import qikahome.tconlib.placeabletool.hook.PlacedToolInteractionModifierHook;
 import qikahome.tconlib.placeabletool.hook.PlacedToolLightModifierHook;
 import qikahome.tconlib.placeabletool.hook.PlacedToolTickModifierHook;
 import qikahome.tconlib.placeabletool.hook.ToolPlacingModifierHook;
+import qikahome.tconlib.predicate.HasAnyMobEffectPredicate;
 import qikahome.tconlib.predicate.LightLevelPredicate;
 import slimeknights.mantle.data.predicate.entity.LivingEntityPredicate;
 import slimeknights.mantle.registration.deferred.BlockEntityTypeDeferredRegister;
@@ -135,6 +137,7 @@ public class TconLib {
                     soulFireLoaded ? SoulFieryCounterModule.LOADER
                             : FieryCounterModule.LOADER.xmap((a, b) -> a, (a, b) -> a));
             LivingEntityPredicate.LOADER.register(getResource("light_level"), LightLevelPredicate.LOADER);
+            LivingEntityPredicate.LOADER.register(getResource("has_any_mob_effect"), HasAnyMobEffectPredicate.LOADER);
         }
 
     }
@@ -214,6 +217,7 @@ public class TconLib {
     @SubscribeEvent
     public void onAddReloadListeners(AddReloadListenerEvent event) {
         ToolPlacementDataManager.init(event);
+        ModifierModuleInjector.init(event);
     }
 
     // 您可以使用EventBusSubscriber自动注册类中所有带有@SubscribeEvent注解的静态方法

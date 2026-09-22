@@ -6,7 +6,8 @@
   "mixins": [
     "MixinFlowingFluid",
     "MixinThresholdSwitchBlockEntity",
-    "MixinItem"
+    "MixinItem",
+    "MixinModifierManager"
   ],
   "client": [
     "MixinModelBakery",

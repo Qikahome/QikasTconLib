@@ -47,7 +47,7 @@ public record LightLevelPredicate(IntRange light, @Nullable LightLayer lightLaye
     }
 
     @Override
-    public RecordLoadable<? extends IJsonPredicate<LivingEntity>> getLoader() {
+    public RecordLoadable<LightLevelPredicate> getLoader() {
         return LOADER;
     }
 }
