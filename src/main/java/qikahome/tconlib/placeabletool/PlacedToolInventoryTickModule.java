@@ -29,20 +29,16 @@ import slimeknights.mantle.data.loadable.record.SingletonLoader;
 import slimeknights.tconstruct.library.modifiers.ModifierEntry;
 import slimeknights.tconstruct.library.modifiers.ModifierHooks;
 import slimeknights.tconstruct.library.modifiers.modules.ModifierModule;
-import slimeknights.tconstruct.library.module.HookProvider;
-import slimeknights.tconstruct.library.module.ModuleHook;
 import slimeknights.tconstruct.library.tools.nbt.IToolStackView;
 
 @Mod.EventBusSubscriber(modid = TconLib.MODID)
 public enum PlacedToolInventoryTickModule implements ModifierModule, PlacedToolTickModifierHook {
     INSTANCE;
 
-    private static final List<ModuleHook<?>> DEFAULT_HOOKS = HookProvider.defaultHooks(TconLib.PLACED_TOOL_TICK_HOOK);
-    public static final RecordLoadable<PlacedToolInventoryTickModule> LOADER = new SingletonLoader<>(INSTANCE);
+    // getDefaultHooks / addVolatileData 由 PlacedToolTickModifierHook 默认实现提供
+    // （自动声明 tick 钩子 + VOLATILE_DATA 钩子并写入 tick 标记）
 
-    public List<ModuleHook<?>> getDefaultHooks() {
-        return DEFAULT_HOOKS;
-    }
+    public static final RecordLoadable<PlacedToolInventoryTickModule> LOADER = new SingletonLoader<>(INSTANCE);
 
     private static Map<LevelAccessor, FakeLiving> map = new HashMap<>();
 

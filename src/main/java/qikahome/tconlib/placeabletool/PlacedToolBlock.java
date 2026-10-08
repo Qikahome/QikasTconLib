@@ -68,6 +68,7 @@ import net.minecraftforge.items.wrapper.EmptyHandler;
 import net.minecraftforge.network.NetworkHooks;
 import qikahome.tconlib.TconLib;
 import qikahome.tconlib.placeabletool.ToolPlacementDataManager.PlacementData;
+import qikahome.tconlib.placeabletool.hook.PlacedToolTickModifierHook;
 import slimeknights.mantle.fluid.FluidTransferHelper;
 import slimeknights.mantle.util.typed.TypedMap;
 import slimeknights.tconstruct.common.network.TinkerNetwork;
@@ -85,6 +86,13 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     /** 发光等级（0-15）：由工具的 PLACED_TOOL_LIGHT_HOOK 计算并写入，供光照引擎查询 */
     public static final IntegerProperty LIGHT = IntegerProperty.create("light", 0, 15);
+    /**
+     * 是否需要 ticker：任意 tick 模块（{@code PlacedToolTickModifierHook.TICK_FLAG} 易失标记）或工具带 tank 容量
+     * （需节流补发流体同步）。由 {@code PlacedToolBlockEntity#updateTickState} 在写入工具后按实际工具重算；
+     * 默认值 true（BooleanProperty 首个可能值为 true → 方块默认状态为 true），旧存档中缺少该属性的方块
+     * 也按 true 走，保证先前放置的 tick 工具无需重新放置。
+     */
+    public static final BooleanProperty TICK = BooleanProperty.create("tick");
 
     public PlacedToolBlock(Properties p_49224_) {
         super(p_49224_);
@@ -156,10 +164,13 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
     @Nullable
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
             BlockEntityType<T> type) {
-        // 仅服务端需要：节流窗口结束后补发流体同步
-        return level.isClientSide ? null
-                : createTickerHelper(type, TconLib.PLACED_TOOL_ENTITY.get(),
-                        PlacedToolBlockEntity::serverTick);
+        // 仅服务端需要，且只有"需要 tick"的方块才注册 ticker（TICK 属性为 false 时返回 null，
+        // 该方块完全不进入 tick 列表）：客户端无需，无标记且无 tank 容量的放置工具也无需
+        if (level.isClientSide || !state.getValue(TICK)) {
+            return null;
+        }
+        return createTickerHelper(type, TconLib.PLACED_TOOL_ENTITY.get(),
+                PlacedToolBlockEntity::serverTick);
     }
 
     @Override
@@ -314,7 +325,7 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, WATERLOGGED, LIGHT);
+        builder.add(FACING, WATERLOGGED, LIGHT, TICK);
     }
 
     @Override
@@ -462,7 +473,11 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
             if (be.pendingSync) {
                 be.flushSync(level.getGameTime());
             }
-            // tick 钩子：模块可在方块存在期间每 tick 工作
+            // tick 钩子：只有带 tick 标记（存在 tick 模块）的工具才执行；
+            // 仅有 tank 容量的方块注册 ticker 只是为了补发流体同步，不跑钩子
+            if (!be.hasTickModule()) {
+                return;
+            }
             ToolStack tool = ToolStack.from(be.getStack());
             for (ModifierEntry entry : tool.getModifierList()) {
                 entry.getHook(TconLib.PLACED_TOOL_TICK_HOOK).onTick(tool, entry, state, level, pos, be);
@@ -544,6 +559,8 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
             if (this.level != null && !this.level.isClientSide) {
                 // 工具更换可能改变发光等级（modifier 携带的发光模块），重算 LIGHT 属性
                 updateLight();
+                // 工具更换可能改变是否需要 ticker，重算 TICK 属性
+                updateTickState();
                 BlockState state = this.level.getBlockState(this.worldPosition);
                 this.level.sendBlockUpdated(this.worldPosition, state, state, Block.UPDATE_CLIENTS);
             }
@@ -671,6 +688,33 @@ public class PlacedToolBlock extends BaseEntityBlock implements SimpleWaterlogge
             BlockState state = level.getBlockState(worldPosition);
             if (state.getValue(PlacedToolBlock.LIGHT) != light) {
                 level.setBlock(worldPosition, state.setValue(PlacedToolBlock.LIGHT, light), Block.UPDATE_CLIENTS);
+            }
+        }
+
+        /** 工具是否带 tick 模块（易失标记），决定 serverTick 是否执行 tick 钩子 */
+        private boolean hasTickModule() {
+            return ModifierUtil.checkVolatileFlag(stack, PlacedToolTickModifierHook.TICK_FLAG);
+        }
+
+        /** 该方块是否需要 ticker：带 tick 模块，或带 tank 容量（需节流补发流体同步） */
+        private boolean needsTick() {
+            return hasTickModule() || ToolTankHelper.TANK_HELPER.getCapacity(getTool()) > 0;
+        }
+
+        /**
+         * 服务端：按当前工具重算并写入 TICK 属性；变化时才 setBlock。
+         * <p>
+         * 属性变化会让 {@code LevelChunk#setBlockState} 走到"BE 已存在"分支并重新调用 ticker 注册逻辑，
+         * 从而按新属性注册或移除 ticker（不需要额外反射/内部 API）。
+         */
+        private void updateTickState() {
+            if (level == null || level.isClientSide) {
+                return;
+            }
+            boolean tick = needsTick();
+            BlockState state = level.getBlockState(worldPosition);
+            if (state.getValue(PlacedToolBlock.TICK) != tick) {
+                level.setBlock(worldPosition, state.setValue(PlacedToolBlock.TICK, tick), Block.UPDATE_CLIENTS);
             }
         }
 
